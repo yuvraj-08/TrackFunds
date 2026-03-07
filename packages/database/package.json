@@ -1,0 +1,38 @@
+{
+  "name": "@trackfunds/database",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    },
+    "./schema": {
+      "types": "./dist/schema.d.ts",
+      "default": "./dist/schema.js"
+    }
+  },
+  "scripts": {
+    "db:generate": "node ./node_modules/drizzle-kit/bin.cjs generate --config=drizzle.config.ts",
+    "db:migrate": "node ../../scripts/run-with-env.mjs node ./node_modules/drizzle-kit/bin.cjs migrate --config=drizzle.config.ts",
+    "build": "pnpm exec tsc -p tsconfig.json",
+    "lint": "eslint src --max-warnings=0",
+    "typecheck": "pnpm exec tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.44.5",
+    "pg": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.7.2",
+    "@types/pg": "^8.15.6",
+    "drizzle-kit": "^0.31.4"
+  }
+}
