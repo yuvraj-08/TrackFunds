@@ -1,0 +1,7 @@
+node_modules
+.pnpm-store
+.turbo
+dist
+coverage
+apps/web/.next
+apps/web/next-env.d.ts
