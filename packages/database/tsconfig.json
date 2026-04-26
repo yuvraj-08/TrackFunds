@@ -3,11 +3,16 @@
   "extends": "@trackfunds/config/tsconfig/base",
   "compilerOptions": {
     "composite": true,
+    "baseUrl": ".",
     "lib": ["ES2022"],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "rootDir": "./src",
     "outDir": "./dist",
+    "paths": {
+      "drizzle-orm": ["../../node_modules/drizzle-orm"],
+      "drizzle-orm/*": ["../../node_modules/drizzle-orm/*"]
+    },
     "types": ["node"]
   },
   "include": ["src/**/*.ts"]

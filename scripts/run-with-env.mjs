@@ -63,7 +63,7 @@ const child = spawn(args[0], args.slice(1), {
   cwd: workingDirectory,
   env: process.env,
   stdio: 'inherit',
-  shell: true,
+  shell: false,
 })
 
 child.on('exit', (code, signal) => {

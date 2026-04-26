@@ -6,15 +6,20 @@ import type { AuthenticatedUser } from '../auth/auth.types.js'
 import { AccountsService } from './accounts.service.js'
 import { AddParticipantDto } from './dto/add-participant.dto.js'
 import { CreateAccountDto } from './dto/create-account.dto.js'
+import { CreateInvitationDto } from './dto/create-invitation.dto.js'
 import { ListAccountsQueryDto } from './dto/list-accounts-query.dto.js'
 import { UpdateAccountDto } from './dto/update-account.dto.js'
 import { UpdateParticipantDto } from './dto/update-participant.dto.js'
+import { InvitationsService } from './invitations.service.js'
 
 @ApiTags('accounts')
 @ApiBearerAuth()
 @Controller('accounts')
 export class AccountsController {
-  constructor(private readonly accountsService: AccountsService) {}
+  constructor(
+    private readonly accountsService: AccountsService,
+    private readonly invitationsService: InvitationsService,
+  ) {}
 
   @Post()
   @Version('1')
@@ -109,5 +114,37 @@ export class AccountsController {
   @ApiOperation({ summary: 'Get derived debt summary from withdrawal history.' })
   getDebts(@Param('accountId') accountId: string, @CurrentUser() user: AuthenticatedUser) {
     return this.accountsService.getDebtSummary(accountId, user.id)
+  }
+
+  @Post(':accountId/invitations')
+  @Version('1')
+  @ApiOperation({ summary: 'Send an invitation to join this account.' })
+  createInvitation(
+    @Param('accountId') accountId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: CreateInvitationDto,
+  ) {
+    return this.invitationsService.createInvitation(accountId, user.id, body)
+  }
+
+  @Get(':accountId/invitations')
+  @Version('1')
+  @ApiOperation({ summary: 'List pending invitations for this account.' })
+  listInvitations(
+    @Param('accountId') accountId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.invitationsService.listInvitations(accountId, user.id)
+  }
+
+  @Delete(':accountId/invitations/:invitationId')
+  @Version('1')
+  @ApiOperation({ summary: 'Cancel a pending invitation.' })
+  cancelInvitation(
+    @Param('accountId') accountId: string,
+    @Param('invitationId') invitationId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.invitationsService.cancelInvitation(accountId, invitationId, user.id)
   }
 }

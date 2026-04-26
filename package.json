@@ -12,6 +12,9 @@
   "scripts": {
     "dev": "turbo run dev --parallel",
     "dev:api": "pnpm --filter api dev",
+    "dev:mobile": "pnpm --filter mobile start",
+    "build:android:preview": "pnpm --filter mobile build:android:preview",
+    "build:android:production": "pnpm --filter mobile build:android:production",
     "dev:web": "pnpm --filter web dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
@@ -29,6 +32,7 @@
     "eslint": "^9.39.2",
     "globals": "^16.4.0",
     "prettier": "^3.8.1",
+    "resolve-pkg-maps": "^1.0.0",
     "rimraf": "^6.1.1",
     "turbo": "^2.8.9",
     "typescript": "^5.9.3",

@@ -13,6 +13,12 @@ import {
 
 export const transactionTypeEnum = pgEnum('transaction_type', ['DEPOSIT', 'WITHDRAWAL'])
 export const transactionSourceEnum = pgEnum('transaction_source', ['MANUAL', 'SMS_IMPORT'])
+export const invitationStatusEnum = pgEnum('invitation_status', [
+  'PENDING',
+  'ACCEPTED',
+  'DECLINED',
+  'CANCELLED',
+])
 
 export const users = pgTable(
   'users',
@@ -101,6 +107,38 @@ export const transactions = pgTable(
   }),
 )
 
+export const accountInvitations = pgTable(
+  'account_invitations',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    accountId: uuid('account_id')
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    invitedByUserId: uuid('invited_by_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    email: text('email').notNull(),
+    codeHash: text('code_hash').notNull(),
+    status: invitationStatusEnum('status').default('PENDING').notNull(),
+    canView: boolean('can_view').default(true).notNull(),
+    canAddTransactions: boolean('can_add_transactions').default(false).notNull(),
+    canEditTransactions: boolean('can_edit_transactions').default(false).notNull(),
+    canDeleteTransactions: boolean('can_delete_transactions').default(false).notNull(),
+    canManageParticipants: boolean('can_manage_participants').default(false).notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    acceptedAt: timestamp('accepted_at', { withTimezone: true }),
+    declinedAt: timestamp('declined_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    codeHashUnique: uniqueIndex('account_invitations_code_hash_unique').on(table.codeHash),
+    accountEmailIndex: index('account_invitations_account_email_idx').on(
+      table.accountId,
+      table.email,
+    ),
+  }),
+)
+
 export const passwordResetTokens = pgTable(
   'password_reset_tokens',
   {
@@ -143,6 +181,17 @@ export const refreshTokens = pgTable(
   }),
 )
 
+export const accountInvitationsRelations = relations(accountInvitations, ({ one }) => ({
+  account: one(accounts, {
+    fields: [accountInvitations.accountId],
+    references: [accounts.id],
+  }),
+  invitedBy: one(users, {
+    fields: [accountInvitations.invitedByUserId],
+    references: [users.id],
+  }),
+}))
+
 export const usersRelations = relations(users, ({ many }) => ({
   ownedAccounts: many(accounts),
   accountParticipants: many(accountParticipants),
@@ -160,6 +209,7 @@ export const accountsRelations = relations(accounts, ({ one, many }) => ({
   }),
   participants: many(accountParticipants),
   transactions: many(transactions),
+  invitations: many(accountInvitations),
 }))
 
 export const accountParticipantsRelations = relations(accountParticipants, ({ one }) => ({

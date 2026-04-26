@@ -68,4 +68,52 @@ export class MailerService {
       resetUrl,
     }
   }
+
+  async sendInvitationEmail(input: {
+    to: string
+    inviterName: string
+    accountName: string
+    code: string
+    expiresAt: Date
+  }) {
+    const from = process.env.SMTP_FROM ?? 'no-reply@trackfunds.local'
+    const host = process.env.SMTP_HOST
+    const port = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined
+    const user = process.env.SMTP_USER
+    const pass = process.env.SMTP_PASS
+    const secure = process.env.SMTP_SECURE === 'true'
+
+    if (!host || !port || !user || !pass) {
+      this.logger.warn(
+        `SMTP not configured. Invite email not sent to ${input.to}. Code: ${input.code}`,
+      )
+      return { mode: 'log-only' as const, code: input.code }
+    }
+
+    const transport = nodemailer.createTransport({ host, port, secure, auth: { user, pass } })
+
+    await transport.sendMail({
+      from,
+      to: input.to,
+      subject: `${input.inviterName} invited you to "${input.accountName}" on TrackFunds`,
+      text: [
+        `Hi,`,
+        '',
+        `${input.inviterName} has invited you to join "${input.accountName}" on TrackFunds.`,
+        '',
+        `Your invite code: ${input.code}`,
+        '',
+        'To join:',
+        '  1. Open TrackFunds',
+        '  2. Go to Accounts → Redeem invite',
+        `  3. Enter the code: ${input.code}`,
+        '',
+        `This invitation expires on ${input.expiresAt.toDateString()}.`,
+        '',
+        'If you were not expecting this, you can safely ignore this email.',
+      ].join('\n'),
+    })
+
+    return { mode: 'smtp' as const, code: input.code }
+  }
 }
