@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 
 import { CurrentUser } from '../auth/current-user.decorator.js'
 import type { AuthenticatedUser } from '../auth/auth.types.js'
+import { Public } from '../auth/public.decorator.js'
 import { InvitationsService } from './invitations.service.js'
 import { RedeemInvitationDto } from './dto/redeem-invitation.dto.js'
 
@@ -12,6 +13,7 @@ import { RedeemInvitationDto } from './dto/redeem-invitation.dto.js'
 export class InvitationsController {
   constructor(private readonly invitationsService: InvitationsService) {}
 
+  @Public()
   @Post('lookup')
   @Version('1')
   @ApiOperation({ summary: 'Look up an invitation by code and preview account details.' })

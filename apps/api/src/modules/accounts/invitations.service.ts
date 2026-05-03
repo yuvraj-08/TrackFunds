@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common'
 import { and, eq } from 'drizzle-orm'
@@ -17,6 +18,8 @@ const INVITE_EXPIRY_DAYS = 7
 
 @Injectable()
 export class InvitationsService {
+  private readonly logger = new Logger(InvitationsService.name)
+
   constructor(
     private readonly db: DatabaseService,
     private readonly accountsService: AccountsService,
@@ -32,14 +35,6 @@ export class InvitationsService {
     await this.accountsService.assertCanManageParticipants(accountId, actingUserId)
 
     // Block if invitee is already a participant
-    const existingParticipant = await this.db.db.query.accountParticipants.findFirst({
-      where: and(
-        eq(accountParticipants.accountId, accountId),
-        // join via user email
-      ),
-      with: { user: true },
-    })
-
     const allParticipants = await this.db.db.query.accountParticipants.findMany({
       where: eq(accountParticipants.accountId, accountId),
       with: { user: true },
@@ -99,13 +94,19 @@ export class InvitationsService {
       throw new BadRequestException('Invitation could not be created.')
     }
 
-    await this.mailer.sendInvitationEmail({
-      to: input.email,
-      inviterName: inviter?.displayName ?? 'Someone',
-      accountName: account.name,
-      code,
-      expiresAt,
-    })
+    await this.mailer
+      .sendInvitationEmail({
+        to: input.email,
+        inviterName: inviter?.displayName ?? 'Someone',
+        accountName: account.name,
+        code,
+        expiresAt,
+      })
+      .catch((err: unknown) => {
+        this.logger.error(
+          `Failed to send invitation email to ${input.email}: ${err instanceof Error ? err.message : String(err)}`,
+        )
+      })
 
     return { ...invitation, code }
   }
