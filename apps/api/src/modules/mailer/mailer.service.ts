@@ -46,6 +46,7 @@ export class MailerService {
         user,
         pass,
       },
+      family: 4,
     })
 
     await transport.sendMail({
@@ -90,7 +91,7 @@ export class MailerService {
       return { mode: 'log-only' as const, code: input.code }
     }
 
-    const transport = nodemailer.createTransport({ host, port, secure, auth: { user, pass } })
+    const transport = nodemailer.createTransport({ host, port, secure, auth: { user, pass }, family: 4 })
 
     await transport.sendMail({
       from,
