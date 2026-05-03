@@ -316,6 +316,11 @@ export function createRequestExecutor(
       ),
     listInvitations: (accountId: string) =>
       request<InvitationRecord[]>(`/api/v1/accounts/${accountId}/invitations`),
+    resendInvitation: (accountId: string, invitationId: string) =>
+      request<{ invitationId: string; message: string }>(
+        `/api/v1/accounts/${accountId}/invitations/${invitationId}/resend`,
+        { method: 'POST' },
+      ),
     cancelInvitation: (accountId: string, invitationId: string) =>
       request<{ invitationId: string; message: string }>(
         `/api/v1/accounts/${accountId}/invitations/${invitationId}`,

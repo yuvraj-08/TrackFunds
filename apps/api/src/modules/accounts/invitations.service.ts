@@ -125,6 +125,57 @@ export class InvitationsService {
     })
   }
 
+  async resendInvitation(
+    accountId: string,
+    invitationId: string,
+    actingUserId: string,
+  ) {
+    await this.accountsService.assertCanManageParticipants(accountId, actingUserId)
+
+    const invitation = await this.db.db.query.accountInvitations.findFirst({
+      where: and(
+        eq(accountInvitations.id, invitationId),
+        eq(accountInvitations.accountId, accountId),
+        eq(accountInvitations.status, 'PENDING'),
+      ),
+    })
+
+    if (!invitation) {
+      throw new NotFoundException('Invitation not found or already resolved.')
+    }
+
+    const account = await this.accountsService.getAccountById(accountId)
+    const inviter = await this.db.db.query.users.findFirst({
+      where: eq(users.id, actingUserId),
+    })
+
+    const code = generateInviteCode()
+    const codeHash = hashInviteCode(code)
+    const expiresAt = new Date()
+    expiresAt.setDate(expiresAt.getDate() + INVITE_EXPIRY_DAYS)
+
+    await this.db.db
+      .update(accountInvitations)
+      .set({ codeHash, expiresAt })
+      .where(eq(accountInvitations.id, invitationId))
+
+    await this.mailer
+      .sendInvitationEmail({
+        to: invitation.email,
+        inviterName: inviter?.displayName ?? 'Someone',
+        accountName: account.name,
+        code,
+        expiresAt,
+      })
+      .catch((err: unknown) => {
+        this.logger.error(
+          `Failed to resend invitation email to ${invitation.email}: ${err instanceof Error ? err.message : String(err)}`,
+        )
+      })
+
+    return { message: 'Invitation resent.', invitationId }
+  }
+
   async cancelInvitation(
     accountId: string,
     invitationId: string,

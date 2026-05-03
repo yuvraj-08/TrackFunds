@@ -206,6 +206,17 @@ export default function ParticipantsScreen() {
     }
   }
 
+  const handleResendInvitation = async (invitationId: string, email: string) => {
+    if (!accountId) return
+    try {
+      await api.resendInvitation(accountId, invitationId)
+      Alert.alert('Invitation resent', `A new invite email has been sent to ${email}.`)
+      await loadData()
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Could not resend invitation.')
+    }
+  }
+
   const handleCancelInvitation = async (invitationId: string, email: string) => {
     if (!accountId) return
     Alert.alert('Cancel invitation?', `Cancel the pending invite for ${email}?`, [
@@ -342,6 +353,9 @@ export default function ParticipantsScreen() {
                     Expires {new Date(inv.expiresAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
                   </Text>
                 </View>
+                <Pressable onPress={() => void handleResendInvitation(inv.id, inv.email)} hitSlop={8} style={{ marginRight: 8 }}>
+                  <Ionicons name="paper-plane-outline" size={20} color={theme.colors.accent} />
+                </Pressable>
                 <Pressable onPress={() => void handleCancelInvitation(inv.id, inv.email)} hitSlop={8}>
                   <Ionicons name="close-circle-outline" size={20} color={theme.colors.muted} />
                 </Pressable>

@@ -137,6 +137,17 @@ export class AccountsController {
     return this.invitationsService.listInvitations(accountId, user.id)
   }
 
+  @Post(':accountId/invitations/:invitationId/resend')
+  @Version('1')
+  @ApiOperation({ summary: 'Resend a pending invitation email with a fresh code.' })
+  resendInvitation(
+    @Param('accountId') accountId: string,
+    @Param('invitationId') invitationId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.invitationsService.resendInvitation(accountId, invitationId, user.id)
+  }
+
   @Delete(':accountId/invitations/:invitationId')
   @Version('1')
   @ApiOperation({ summary: 'Cancel a pending invitation.' })
