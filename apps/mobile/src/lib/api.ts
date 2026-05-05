@@ -1,7 +1,7 @@
 import type { AccountPermissionSet, TransactionSource, TransactionType } from '@trackfunds/types'
 
 export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL?.replace(/\/$/u, '') ?? 'https://trackfunds.onrender.com'
+  process.env.EXPO_PUBLIC_API_BASE_URL?.replace(/\/$/u, '') ?? 'http://localhost:4000'
 
 export interface UserRecord {
   createdAt: string

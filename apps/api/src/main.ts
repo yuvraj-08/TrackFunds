@@ -6,6 +6,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import helmet from 'helmet'
 
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js'
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor.js'
 import { AppModule } from './modules/app.module.js'
 
 async function bootstrap() {
@@ -34,6 +35,7 @@ async function bootstrap() {
     }),
   )
   app.useGlobalFilters(new HttpExceptionFilter())
+  app.useGlobalInterceptors(new LoggingInterceptor())
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('TrackFunds API')
@@ -44,6 +46,15 @@ async function bootstrap() {
 
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig)
   SwaggerModule.setup('docs', app, swaggerDocument)
+
+  app.getHttpAdapter().get('/', (_req, res: { json: (body: unknown) => void }) => {
+    res.json({
+      name: 'TrackFunds API',
+      version: '1.0.0',
+      docs: '/docs',
+      health: '/api/v1/health',
+    })
+  })
 
   const port = Number(process.env.PORT ?? 4000)
   await app.listen(port)

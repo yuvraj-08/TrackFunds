@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common'
-import nodemailer from 'nodemailer'
+import nodemailer, { type TransportOptions } from 'nodemailer'
 
 @Injectable()
 export class MailerService {
@@ -47,7 +47,7 @@ export class MailerService {
         pass,
       },
       family: 4,
-    })
+    } as TransportOptions)
 
     await transport.sendMail({
       from,
@@ -91,7 +91,7 @@ export class MailerService {
       return { mode: 'log-only' as const, code: input.code }
     }
 
-    const transport = nodemailer.createTransport({ host, port, secure, auth: { user, pass }, family: 4 })
+    const transport = nodemailer.createTransport({ host, port, secure, auth: { user, pass }, family: 4 } as TransportOptions)
 
     await transport.sendMail({
       from,

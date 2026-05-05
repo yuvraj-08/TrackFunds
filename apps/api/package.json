@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node ../../scripts/run-with-env.mjs tsx watch src/main.ts",
+    "dev": "node ../../scripts/run-with-env.mjs node --watch --import @swc-node/register/esm-register src/main.ts",
     "prebuild": "pnpm --filter @trackfunds/database build && pnpm --filter @trackfunds/types build",
     "build": "pnpm exec tsc -p tsconfig.build.json",
     "start": "node ../../scripts/run-with-env.mjs node dist/main.js",
@@ -33,6 +33,9 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
+    "@swc-node/register": "^1.11.1",
+    "@swc/core": "^1.15.33",
+    "@swc/helpers": "^0.5.21",
     "@types/express": "^5.0.3",
     "@types/node": "^24.7.2",
     "@types/nodemailer": "^7.0.11",
