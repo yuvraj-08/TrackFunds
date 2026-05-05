@@ -82,7 +82,7 @@ export class AuthService {
       return { message }
     }
 
-    if (process.env.NODE_ENV === 'production' && !this.mailerService.isSmtpConfigured()) {
+    if (process.env.NODE_ENV === 'production' && !this.mailerService.isResendConfigured()) {
       throw new ServiceUnavailableException('Password reset email delivery is not configured.')
     }
 
