@@ -1,4 +1,4 @@
-import { Link, useRouter } from 'expo-router'
+import { Link, useLocalSearchParams, useRouter } from 'expo-router'
 import { useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 
@@ -11,7 +11,8 @@ import { useSession } from '@/src/hooks/use-session'
 export default function ResetPasswordScreen() {
   const router = useRouter()
   const { resetPassword } = useSession()
-  const [token, setToken] = useState('')
+  const params = useLocalSearchParams<{ token?: string }>()
+  const [token, setToken] = useState(params.token ?? '')
   const [newPassword, setNewPassword] = useState('')
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -38,8 +39,12 @@ export default function ResetPasswordScreen() {
   return (
     <AuthShell
       eyebrow="Set a new password"
-      title="Complete the reset in app"
-      subtitle="Paste the reset token from the email and choose a new password."
+      title="Complete the reset"
+      subtitle={
+        params.token
+          ? 'Your reset token has been filled in. Just set a new password below.'
+          : 'Paste the reset token from the email and choose a new password.'
+      }
     >
       <View style={styles.form}>
         <FormField

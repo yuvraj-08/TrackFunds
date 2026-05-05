@@ -252,7 +252,7 @@ export class InvitationsService {
 
     const invitation = await this.db.db.query.accountInvitations.findFirst({
       where: eq(accountInvitations.codeHash, codeHash),
-      with: { account: true },
+      with: { account: true, invitedBy: true },
     })
 
     if (!invitation) throw new NotFoundException('Invite code not found.')
@@ -305,6 +305,17 @@ export class InvitationsService {
       .update(accountInvitations)
       .set({ status: 'ACCEPTED', acceptedAt: new Date() })
       .where(eq(accountInvitations.id, invitation.id))
+
+    this.mailer
+      .sendInvitationAcceptedEmail({
+        to: invitation.invitedBy.email,
+        inviterName: invitation.invitedBy.displayName,
+        joinerName: actingUser.displayName,
+        accountName: invitation.account.name,
+      })
+      .catch((err: unknown) =>
+        this.logger.error(`Invitation accepted email failed: ${String(err)}`),
+      )
 
     return this.accountsService.getAccountById(invitation.accountId)
   }

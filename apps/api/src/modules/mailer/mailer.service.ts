@@ -1,6 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { Resend } from 'resend'
 
+import {
+  invitationAcceptedTemplate,
+  invitationTemplate,
+  passwordChangedTemplate,
+  passwordResetTemplate,
+  welcomeTemplate,
+} from './email-templates.js'
+
 @Injectable()
 export class MailerService {
   private readonly logger = new Logger(MailerService.name)
@@ -13,6 +21,63 @@ export class MailerService {
 
   isResendConfigured() {
     return Boolean(process.env.RESEND_API_KEY)
+  }
+
+  async sendWelcomeEmail(input: { to: string; displayName: string }) {
+    const from = process.env.RESEND_FROM ?? 'TrackFunds <no-reply@yuvrajcodes.site>'
+    const resend = this.getClient()
+
+    if (!resend) {
+      this.logger.warn(`Resend not configured. Welcome email not sent for ${input.to}.`)
+      return { mode: 'log-only' as const }
+    }
+
+    const { subject, html, text } = welcomeTemplate({ displayName: input.displayName })
+    await resend.emails.send({ from, to: input.to, subject, html, text })
+
+    return { mode: 'resend' as const }
+  }
+
+  async sendPasswordChangedEmail(input: { to: string; displayName: string; changedAt: Date }) {
+    const from = process.env.RESEND_FROM ?? 'TrackFunds <no-reply@yuvrajcodes.site>'
+    const resend = this.getClient()
+
+    if (!resend) {
+      this.logger.warn(`Resend not configured. Password changed email not sent for ${input.to}.`)
+      return { mode: 'log-only' as const }
+    }
+
+    const { subject, html, text } = passwordChangedTemplate({
+      displayName: input.displayName,
+      changedAt: input.changedAt,
+    })
+    await resend.emails.send({ from, to: input.to, subject, html, text })
+
+    return { mode: 'resend' as const }
+  }
+
+  async sendInvitationAcceptedEmail(input: {
+    to: string
+    inviterName: string
+    joinerName: string
+    accountName: string
+  }) {
+    const from = process.env.RESEND_FROM ?? 'TrackFunds <no-reply@yuvrajcodes.site>'
+    const resend = this.getClient()
+
+    if (!resend) {
+      this.logger.warn(`Resend not configured. Invitation accepted email not sent for ${input.to}.`)
+      return { mode: 'log-only' as const }
+    }
+
+    const { subject, html, text } = invitationAcceptedTemplate({
+      inviterName: input.inviterName,
+      joinerName: input.joinerName,
+      accountName: input.accountName,
+    })
+    await resend.emails.send({ from, to: input.to, subject, html, text })
+
+    return { mode: 'resend' as const }
   }
 
   async sendPasswordResetEmail(input: {
@@ -31,20 +96,13 @@ export class MailerService {
       return { mode: 'log-only' as const, resetUrl }
     }
 
-    await resend.emails.send({
-      from,
-      to: input.to,
-      subject: 'TrackFunds password reset',
-      text: [
-        `Hi ${input.displayName},`,
-        '',
-        'A password reset was requested for your TrackFunds account.',
-        `Reset your password here: ${resetUrl}`,
-        `This link expires at ${input.expiresAt.toISOString()}.`,
-        '',
-        'If you did not request this, you can ignore this email.',
-      ].join('\n'),
+    const { subject, html, text } = passwordResetTemplate({
+      displayName: input.displayName,
+      resetUrl,
+      expiresAt: input.expiresAt,
     })
+
+    await resend.emails.send({ from, to: input.to, subject, html, text })
 
     return { mode: 'resend' as const, resetUrl }
   }
@@ -66,27 +124,14 @@ export class MailerService {
       return { mode: 'log-only' as const, code: input.code }
     }
 
-    await resend.emails.send({
-      from,
-      to: input.to,
-      subject: `${input.inviterName} invited you to "${input.accountName}" on TrackFunds`,
-      text: [
-        `Hi,`,
-        '',
-        `${input.inviterName} has invited you to join "${input.accountName}" on TrackFunds.`,
-        '',
-        `Your invite code: ${input.code}`,
-        '',
-        'To join:',
-        '  1. Open TrackFunds',
-        '  2. Go to Accounts → Redeem invite',
-        `  3. Enter the code: ${input.code}`,
-        '',
-        `This invitation expires on ${input.expiresAt.toDateString()}.`,
-        '',
-        'If you were not expecting this, you can safely ignore this email.',
-      ].join('\n'),
+    const { subject, html, text } = invitationTemplate({
+      inviterName: input.inviterName,
+      accountName: input.accountName,
+      code: input.code,
+      expiresAt: input.expiresAt,
     })
+
+    await resend.emails.send({ from, to: input.to, subject, html, text })
 
     return { mode: 'resend' as const, code: input.code }
   }

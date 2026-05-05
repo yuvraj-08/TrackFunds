@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common'
@@ -29,6 +30,8 @@ import { ResetPasswordDto } from './dto/reset-password.dto.js'
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name)
+
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly usersService: UsersService,
@@ -46,6 +49,10 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('User registration failed.')
     }
+
+    this.mailerService.sendWelcomeEmail({ to: user.email, displayName: user.displayName }).catch(
+      (err: unknown) => this.logger.error(`Welcome email failed for ${user.email}: ${String(err)}`),
+    )
 
     return this.issueAuthResponse(user.id, user.email, user.displayName)
   }
@@ -150,14 +157,15 @@ export class AuthService {
 
     const consumedAt = new Date()
 
-    await this.databaseService.db.transaction(async (tx) => {
-      await tx
+    const [updatedUser] = await this.databaseService.db.transaction(async (tx) => {
+      const result = await tx
         .update(users)
         .set({
           passwordHash: hashPassword(input.newPassword),
           updatedAt: consumedAt,
         })
         .where(eq(users.id, resetToken.userId))
+        .returning({ email: users.email, displayName: users.displayName })
 
       await tx
         .update(passwordResetTokens)
@@ -172,7 +180,21 @@ export class AuthService {
         .update(refreshTokens)
         .set({ revokedAt: consumedAt })
         .where(and(eq(refreshTokens.userId, resetToken.userId), isNull(refreshTokens.revokedAt)))
+
+      return result
     })
+
+    if (updatedUser) {
+      this.mailerService
+        .sendPasswordChangedEmail({
+          to: updatedUser.email,
+          displayName: updatedUser.displayName,
+          changedAt: consumedAt,
+        })
+        .catch((err: unknown) =>
+          this.logger.error(`Password changed email failed for ${updatedUser.email}: ${String(err)}`),
+        )
+    }
 
     return {
       message: 'Password reset successful.',
